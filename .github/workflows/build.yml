@@ -32,7 +32,7 @@ jobs:
         run: wails build -tags webkit2_4_1
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: translator-windows
           path: build/bin/translator.exe
