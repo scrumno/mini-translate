@@ -1,0 +1,38 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.25'
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend deps
+        run: cd frontend && npm install
+
+      - name: Build
+        run: wails build -tags webkit2_4_1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: translator-windows
+          path: build/bin/translator.exe
