@@ -53,28 +53,6 @@ type SaveToAnkiResponseDTO struct {
 	Error  string `json:"error,omitempty"`
 }
 
-// SaveToObsidianRequestDTO is the request to save a translation to Obsidian.
-type SaveToObsidianRequestDTO struct {
-	Source        string `json:"source"`
-	Result        string `json:"result"`
-	FromLang      string `json:"fromLang"`
-	ToLang        string `json:"toLang"`
-	IsPhrase      bool   `json:"isPhrase"`
-	Transcription string `json:"transcription,omitempty"`
-	PartOfSpeech  string `json:"partOfSpeech,omitempty"`
-	ExampleEN     string `json:"exampleEN,omitempty"`
-	ExampleRU     string `json:"exampleRU,omitempty"`
-	Context       string `json:"context,omitempty"`
-	Tags          string `json:"tags,omitempty"`
-}
-
-// SaveToObsidianResponseDTO is the response after saving to Obsidian.
-type SaveToObsidianResponseDTO struct {
-	Path  string `json:"path,omitempty"`
-	Error string `json:"error,omitempty"`
-}
-
-// ConfigDTO is the app configuration exposed to the frontend (get/save settings).
 type ConfigDTO struct {
 	TranslatorDebug     bool   `json:"translatorDebug"`
 	ViteDebug           bool   `json:"viteDebug"`
@@ -83,6 +61,11 @@ type ConfigDTO struct {
 	AnkiDeckPhrases     string `json:"ankiDeckPhrases"`
 	AnkiNoteTypeWords   string `json:"ankiNoteTypeWords"`
 	AnkiNoteTypePhrases string `json:"ankiNoteTypePhrases"`
-	ObsidianVaultPath   string `json:"obsidianVaultPath"`
-	Hotkey              string `json:"hotkey"`
+	AutoAddToAnki       bool   `json:"autoAddToAnki"`
+	AnkiAutoSync        bool   `json:"ankiAutoSync"`
+	CompactMode             bool   `json:"compactMode"`
+	DictionaryProvider      string `json:"dictionaryProvider"`
+	YandexDictionaryAPIKey  string `json:"yandexDictionaryApiKey"`
+	Hotkey                  string `json:"hotkey"`
+	HotkeyAddToAnki         string `json:"hotkeyAddToAnki"`
 }

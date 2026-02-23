@@ -171,6 +171,35 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   placeholder="TranslatorPhrase"
                 />
               </div>
+              <div className={styles.field}>
+                <div className={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    id="autoAddToAnki"
+                    className={styles.checkbox}
+                    checked={config.autoAddToAnki}
+                    onChange={e => setConfig({ ...config, autoAddToAnki: e.target.checked })}
+                  />
+                  <label htmlFor="autoAddToAnki" className={styles.checkboxLabel}>
+                    Автоматически добавлять перевод в Anki
+                  </label>
+                </div>
+                <div className={styles.hint}>После каждого перевода карточка создаётся автоматически</div>
+              </div>
+              <div className={styles.field}>
+                <div className={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    id="ankiAutoSync"
+                    className={styles.checkbox}
+                    checked={config.ankiAutoSync}
+                    onChange={e => setConfig({ ...config, ankiAutoSync: e.target.checked })}
+                  />
+                  <label htmlFor="ankiAutoSync" className={styles.checkboxLabel}>
+                    Синхронизировать с AnkiWeb после добавления
+                  </label>
+                </div>
+              </div>
             </section>
 
             <section className={styles.section}>
@@ -214,23 +243,98 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 />
                 <div className={styles.hint}>Нажмите на поле и введите комбинацию. Применится после перезапуска.</div>
               </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="hotkeyAddToAnki">
+                  Добавить в Anki из буфера
+                </label>
+                <input
+                  id="hotkeyAddToAnki"
+                  type="text"
+                  className={styles.input}
+                  value={config.hotkeyAddToAnki}
+                  readOnly
+                  placeholder="Нажмите комбинацию клавиш…"
+                  onFocus={e => {
+                    e.currentTarget.value = 'Нажмите комбинацию…'
+                    e.currentTarget.dataset.recording = 'true'
+                  }}
+                  onBlur={e => {
+                    e.currentTarget.value = config.hotkeyAddToAnki
+                    delete e.currentTarget.dataset.recording
+                  }}
+                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                    if (e.currentTarget.dataset.recording !== 'true') return
+                    e.preventDefault()
+                    const parts: string[] = []
+                    if (e.ctrlKey) parts.push('ctrl')
+                    if (e.shiftKey) parts.push('shift')
+                    if (e.altKey) parts.push('alt')
+                    const key = e.key.toLowerCase()
+                    if (!['control', 'shift', 'alt', 'meta'].includes(key)) {
+                      parts.push(key)
+                      const combo = parts.join('+')
+                      setConfig({ ...config, hotkeyAddToAnki: combo })
+                      e.currentTarget.value = combo
+                      delete e.currentTarget.dataset.recording
+                      e.currentTarget.blur()
+                    }
+                  }}
+                />
+                <div className={styles.hint}>Буфер → перевод → Anki. Применится после перезапуска.</div>
+              </div>
             </section>
 
             <section className={styles.section}>
-              <div className={styles.sectionTitle}>Obsidian</div>
+              <div className={styles.sectionTitle}>Словарь</div>
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="obsidianVaultPath">
-                  Путь к vault
+                <label className={styles.label} htmlFor="dictionaryProvider">
+                  Провайдер словаря
                 </label>
-                <input
-                  id="obsidianVaultPath"
-                  type="text"
+                <select
+                  id="dictionaryProvider"
                   className={styles.input}
-                  value={config.obsidianVaultPath}
-                  onChange={e => setConfig({ ...config, obsidianVaultPath: e.target.value })}
-                  placeholder="C:\knowledge-obsidian или /home/user/ObsidianVault"
-                />
-                <div className={styles.hint}>Полный путь к корневой папке vault. Оставьте пустым, чтобы отключить.</div>
+                  value={config.dictionaryProvider || 'free'}
+                  onChange={e => setConfig({ ...config, dictionaryProvider: e.target.value })}
+                >
+                  <option value="free">Free Dictionary (EN)</option>
+                  <option value="yandex">Yandex.Словарь</option>
+                  <option value="yandex+free">Yandex + Free (fallback)</option>
+                </select>
+              </div>
+              {(config.dictionaryProvider === 'yandex' || config.dictionaryProvider === 'yandex+free') && (
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="yandexDictionaryApiKey">
+                    API-ключ Yandex.Словарь
+                  </label>
+                  <input
+                    id="yandexDictionaryApiKey"
+                    type="password"
+                    className={styles.input}
+                    value={config.yandexDictionaryApiKey}
+                    onChange={e => setConfig({ ...config, yandexDictionaryApiKey: e.target.value })}
+                    placeholder="Ключ из Yandex Cloud"
+                  />
+                  <div className={styles.hint}>Получите ключ на developer.tech.yandex.ru</div>
+                </div>
+              )}
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionTitle}>Режим</div>
+              <div className={styles.field}>
+                <div className={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    id="compactMode"
+                    className={styles.checkbox}
+                    checked={config.compactMode}
+                    onChange={e => setConfig({ ...config, compactMode: e.target.checked })}
+                  />
+                  <label htmlFor="compactMode" className={styles.checkboxLabel}>
+                    Компактный режим при запуске
+                  </label>
+                </div>
+                <div className={styles.hint}>Маленькое окно. Добавляйте слова в Anki по горячей клавише.</div>
               </div>
             </section>
 

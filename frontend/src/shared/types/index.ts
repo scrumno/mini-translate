@@ -47,25 +47,6 @@ export interface SaveToAnkiResponseDTO {
   error?: string
 }
 
-export interface SaveToObsidianRequestDTO {
-  source: string
-  result: string
-  fromLang: string
-  toLang: string
-  isPhrase: boolean
-  transcription?: string
-  partOfSpeech?: string
-  exampleEN?: string
-  exampleRU?: string
-  context?: string
-  tags?: string
-}
-
-export interface SaveToObsidianResponseDTO {
-  path?: string
-  error?: string
-}
-
 export type AsyncState<T> =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -80,6 +61,11 @@ export interface ConfigDTO {
   ankiDeckPhrases: string
   ankiNoteTypeWords: string
   ankiNoteTypePhrases: string
-  obsidianVaultPath: string
+  autoAddToAnki: boolean
+  ankiAutoSync: boolean
+  compactMode: boolean
+  dictionaryProvider: string
+  yandexDictionaryApiKey: string
   hotkey: string
+  hotkeyAddToAnki: string
 }

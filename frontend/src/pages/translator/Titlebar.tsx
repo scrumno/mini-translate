@@ -1,4 +1,4 @@
-import { Divider, IconMinus, IconX, WindowButton, IconPin, IconPinOff, IconSettings } from '@/shared/ui'
+import { IconMinus, IconX, WindowButton, IconPin, IconPinOff, IconSettings, IconMinimize, IconMaximize } from '@/shared/ui'
 import { Quit, WindowMinimise } from '../../../wailsjs/runtime'
 import styles from './translator-page.module.css'
 
@@ -6,17 +6,24 @@ interface TitlebarProps {
   pinned: boolean
   onTogglePin: () => void
   onOpenSettings?: () => void
+  compact?: boolean
+  onToggleCompact?: () => void
 }
 
-export function Titlebar({ pinned, onTogglePin, onOpenSettings }: TitlebarProps) {
+export function Titlebar({ pinned, onTogglePin, onOpenSettings, compact, onToggleCompact }: TitlebarProps) {
   const handleMinimise = () => WindowMinimise()
   const handleClose = () => Quit()
 
   return (
     <div className={styles.titlebar} style={{ ['--wails-draggable' as string]: 'drag' }}>
-      <span className={styles.titlebarTitle}>Переводчик by scrumno</span>
+      {!compact && <span className={styles.titlebarTitle}>Переводчик by scrumno</span>}
       <div className={styles.titlebarControls} style={{ ['--wails-draggable' as string]: 'no-drag' }}>
-        {onOpenSettings && (
+        {onToggleCompact && (
+          <WindowButton onClick={onToggleCompact} title={compact ? 'Развернуть' : 'Компактный'}>
+            {compact ? <IconMaximize size={16} /> : <IconMinimize size={16} />}
+          </WindowButton>
+        )}
+        {!compact && onOpenSettings && (
           <WindowButton onClick={onOpenSettings} title="Настройки">
             <IconSettings size={18} />
           </WindowButton>

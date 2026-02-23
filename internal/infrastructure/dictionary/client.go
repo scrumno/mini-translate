@@ -13,11 +13,16 @@ const baseURL = "https://api.dictionaryapi.dev/api/v2/entries"
 
 // Entry holds simplified dictionary data for a word.
 type Entry struct {
-	Word          string   // original word
-	Transcription string   // phonetic, e.g. /ˈæp.əl/
-	PartOfSpeech  string   // e.g. noun, verb
-	Definitions   []string // definition texts
-	Examples      []string // example sentences (EN)
+	Word          string
+	Transcription string
+	PartOfSpeech  string
+	Definitions   []string
+	Examples      []string
+}
+
+// Looker is the interface for dictionary lookup.
+type Looker interface {
+	Lookup(word string, lang string) (*Entry, error)
 }
 
 // Client calls the Free Dictionary API.
@@ -25,11 +30,43 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// New creates a dictionary client.
+// New creates a Free Dictionary client.
 func New() *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
+}
+
+// NewMulti creates a Looker based on provider config.
+// provider: "free", "yandex", "yandex+free"
+func NewMulti(provider, yandexKey string) Looker {
+	switch provider {
+	case "yandex":
+		return NewYandex(yandexKey)
+	case "yandex+free":
+		return &fallbackLooker{
+			primary:  NewYandex(yandexKey),
+			fallback: New(),
+		}
+	default:
+		return New()
+	}
+}
+
+type fallbackLooker struct {
+	primary  Looker
+	fallback Looker
+}
+
+func (f *fallbackLooker) Lookup(word string, lang string) (*Entry, error) {
+	entry, err := f.primary.Lookup(word, lang)
+	if entry != nil {
+		return entry, nil
+	}
+	if err != nil || entry == nil {
+		return f.fallback.Lookup(word, lang)
+	}
+	return nil, nil
 }
 
 // Lookup fetches word data. Returns nil, nil if word not found (404) or not a single word.

@@ -11,4 +11,7 @@ export {
   Pin,
   PinOff,
   Settings,
+  Minimize2,
+  Maximize2,
+  Volume2,
 } from 'lucide-react'

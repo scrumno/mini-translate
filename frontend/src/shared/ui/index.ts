@@ -13,6 +13,9 @@ export {
   Pin as IconPin,
   PinOff as IconPinOff,
   Settings as IconSettings,
+  Minimize2 as IconMinimize,
+  Maximize2 as IconMaximize,
+  Volume2 as IconVolume,
 } from './icons'
 
 export { Button } from './button/Button'

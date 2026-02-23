@@ -170,6 +170,30 @@ func (c *Client) addNote(deckName, modelName string, fields map[string]string, t
 	}
 }
 
+// Sync triggers synchronization with AnkiWeb.
+func (c *Client) Sync() error {
+	body, err := json.Marshal(map[string]interface{}{
+		"action":  "sync",
+		"version": 6,
+	})
+	if err != nil {
+		return err
+	}
+	resp, err := c.httpClient.Post(c.baseURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("anki sync: %w", err)
+	}
+	defer resp.Body.Close()
+	var out ankiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return err
+	}
+	if out.Error != nil {
+		return fmt.Errorf("anki sync: %v", out.Error)
+	}
+	return nil
+}
+
 // IsPhrase returns true if text looks like a phrase (multiple words or contains spaces).
 func IsPhrase(text string) bool {
 	return strings.TrimSpace(text) == "" || strings.Contains(strings.TrimSpace(text), " ")

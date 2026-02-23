@@ -34,14 +34,14 @@ export function SaveToAnki(arg1) {
   return window['go']['app']['Application']['SaveToAnki'](arg1);
 }
 
-export function SaveToObsidian(arg1) {
-  return window['go']['app']['Application']['SaveToObsidian'](arg1);
-}
-
 export function ToggleAlwaysOnTop(arg1) {
   return window['go']['app']['Application']['ToggleAlwaysOnTop'](arg1);
 }
 
 export function Translate(arg1) {
   return window['go']['app']['Application']['Translate'](arg1);
+}
+
+export function TranslateAndSaveToAnki() {
+  return window['go']['app']['Application']['TranslateAndSaveToAnki']();
 }

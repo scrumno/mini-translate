@@ -12,7 +12,6 @@ const (
 	configFile = "config.json"
 )
 
-// Config holds application settings (Anki, Obsidian, debug). Used in-memory and persisted to config file.
 type Config struct {
 	TranslatorDebug     bool   `json:"translatorDebug"`
 	ViteDebug           bool   `json:"viteDebug"`
@@ -21,8 +20,13 @@ type Config struct {
 	AnkiDeckPhrases     string `json:"ankiDeckPhrases"`
 	AnkiNoteTypeWords   string `json:"ankiNoteTypeWords"`
 	AnkiNoteTypePhrases string `json:"ankiNoteTypePhrases"`
-	ObsidianVaultPath   string `json:"obsidianVaultPath"`
-	Hotkey              string `json:"hotkey"`
+	AutoAddToAnki       bool   `json:"autoAddToAnki"`
+	AnkiAutoSync        bool   `json:"ankiAutoSync"`
+	CompactMode             bool   `json:"compactMode"`
+	DictionaryProvider      string `json:"dictionaryProvider"`
+	YandexDictionaryAPIKey  string `json:"yandexDictionaryApiKey"`
+	Hotkey                  string `json:"hotkey"`
+	HotkeyAddToAnki         string `json:"hotkeyAddToAnki"`
 }
 
 // ConfigPath returns the path to the config file (in user config dir).
@@ -64,11 +68,11 @@ func LoadConfig(path string) (*Config, error) {
 	if c.AnkiNoteTypePhrases == "" {
 		c.AnkiNoteTypePhrases = fromEnv.AnkiNoteTypePhrases
 	}
-	if c.ObsidianVaultPath == "" {
-		c.ObsidianVaultPath = fromEnv.ObsidianVaultPath
-	}
 	if c.Hotkey == "" {
 		c.Hotkey = fromEnv.Hotkey
+	}
+	if c.HotkeyAddToAnki == "" {
+		c.HotkeyAddToAnki = fromEnv.HotkeyAddToAnki
 	}
 	return &c, nil
 }
@@ -102,12 +106,14 @@ func ConfigFromEnv() *Config {
 	if c.AnkiNoteTypePhrases == "" {
 		c.AnkiNoteTypePhrases = "TranslatorPhrase"
 	}
-	// Obsidian
-	c.ObsidianVaultPath = strings.TrimSpace(os.Getenv("OBSIDIAN_VAULT_PATH"))
-	// Hotkey
+	// Hotkeys
 	c.Hotkey = strings.TrimSpace(os.Getenv("TRANSLATOR_HOTKEY"))
 	if c.Hotkey == "" {
 		c.Hotkey = "ctrl+shift+t"
+	}
+	c.HotkeyAddToAnki = strings.TrimSpace(os.Getenv("TRANSLATOR_HOTKEY_ANKI"))
+	if c.HotkeyAddToAnki == "" {
+		c.HotkeyAddToAnki = "ctrl+shift+a"
 	}
 	return c
 }

@@ -18,8 +18,8 @@ export function SaveConfig(arg1:interfaces.ConfigDTO):Promise<void>;
 
 export function SaveToAnki(arg1:interfaces.SaveToAnkiRequestDTO):Promise<interfaces.SaveToAnkiResponseDTO>;
 
-export function SaveToObsidian(arg1:interfaces.SaveToObsidianRequestDTO):Promise<interfaces.SaveToObsidianResponseDTO>;
-
 export function ToggleAlwaysOnTop(arg1:boolean):Promise<void>;
 
 export function Translate(arg1:interfaces.TranslateRequestDTO):Promise<interfaces.TranslationDTO>;
+
+export function TranslateAndSaveToAnki():Promise<interfaces.SaveToAnkiResponseDTO>;

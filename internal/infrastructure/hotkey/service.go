@@ -14,17 +14,28 @@ import (
 // Handler is called when the hotkey fires, receiving clipboard text.
 type Handler func(clipboardText string)
 
-// Service manages global hotkey registration.
-type Service struct {
-	ctx     context.Context
-	handler Handler
+type hotkeyBinding struct {
 	keys    []string
+	handler Handler
 }
 
-// New constructs a hotkey Service with a configurable hotkey string (e.g. "ctrl+shift+t").
+// Service manages global hotkey registration.
+type Service struct {
+	ctx      context.Context
+	bindings []hotkeyBinding
+}
+
+// New constructs a hotkey Service with the primary paste hotkey.
 func New(ctx context.Context, handler Handler, hotkey string) *Service {
+	s := &Service{ctx: ctx}
+	s.Register(hotkey, handler)
+	return s
+}
+
+// Register adds a new hotkey binding.
+func (s *Service) Register(hotkey string, handler Handler) {
 	keys := parseHotkey(hotkey)
-	return &Service{ctx: ctx, handler: handler, keys: keys}
+	s.bindings = append(s.bindings, hotkeyBinding{keys: keys, handler: handler})
 }
 
 func parseHotkey(hotkey string) []string {
@@ -42,24 +53,22 @@ func parseHotkey(hotkey string) []string {
 	return result
 }
 
-// Start begins listening for the configured global hotkey.
+// Start begins listening for all registered global hotkeys.
 // Blocks until context is cancelled — run in a goroutine.
 func (s *Service) Start() {
-	hook.Register(hook.KeyDown, s.keys, func(e hook.Event) {
-		text, err := runtime.ClipboardGetText(s.ctx)
-		if err != nil || text == "" {
-			return
-		}
+	for _, b := range s.bindings {
+		binding := b
+		hook.Register(hook.KeyDown, binding.keys, func(e hook.Event) {
+			text, err := runtime.ClipboardGetText(s.ctx)
+			if err != nil || text == "" {
+				return
+			}
+			runtime.WindowShow(s.ctx)
+			binding.handler(text)
+		})
+		logger.Debug("hotkey: listening for " + strings.Join(binding.keys, "+"))
+	}
 
-		runtime.WindowShow(s.ctx)
-		s.handler(text)
-	})
-
-	logger.Debug("hotkey: listening for " + strings.Join(s.keys, "+"))
-	s.run()
-}
-
-func (s *Service) run() {
 	st := hook.Start()
 	<-hook.Process(st)
 }

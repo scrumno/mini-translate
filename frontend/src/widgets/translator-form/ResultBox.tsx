@@ -1,5 +1,6 @@
 import type { AsyncState, TranslationDTO } from '@/shared/types'
-import { Spinner } from '@/shared/ui'
+import { Spinner, IconVolume, WindowButton } from '@/shared/ui'
+import { speak, isSpeechSupported } from '@/shared/lib/speak'
 import styles from './translator-form.module.css'
 
 interface ResultBoxProps {
@@ -22,11 +23,25 @@ export function ResultBox({ state }: ResultBoxProps) {
     return <div className={`${styles.resultBase} ${styles.resultError}`}>{state.error}</div>
   }
 
-  const lines = state.data.result.split('\n')
+  const { source, result, fromLang, toLang } = state.data
+  const lines = result.split('\n')
+  const canSpeak = isSpeechSupported()
 
   return (
     <div className={`${styles.resultBase} ${styles.resultAnimated}`}>
-      <div className={styles.resultLabel}>Перевод</div>
+      <div className={styles.resultHeader}>
+        <div className={styles.resultLabel}>Перевод</div>
+        {canSpeak && (
+          <div className={styles.speakRow}>
+            <WindowButton onClick={() => speak(source, fromLang)} title="Озвучить оригинал">
+              <IconVolume size={14} />
+            </WindowButton>
+            <WindowButton onClick={() => speak(result, toLang)} title="Озвучить перевод">
+              <IconVolume size={14} />
+            </WindowButton>
+          </div>
+        )}
+      </div>
       <div className={styles.resultText}>
         {lines.map((line, i) => (
           <div key={i} className={styles.resultLine}>

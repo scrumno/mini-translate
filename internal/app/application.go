@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -12,7 +11,6 @@ import (
 	"translator/internal/infrastructure/clipboard"
 	"translator/internal/infrastructure/dictionary"
 	"translator/internal/infrastructure/history"
-	"translator/internal/infrastructure/obsidian"
 	"translator/internal/infrastructure/hotkey"
 	"translator/internal/infrastructure/translator"
 	"translator/internal/interfaces"
@@ -20,14 +18,13 @@ import (
 )
 
 type Application struct {
-	ctx           context.Context
-	useCase       *domain.UseCase
-	clipboard     *clipboard.Service
-	dictionary    *dictionary.Client
-	anki          *anki.Client
-	obsidianVault *obsidian.Vault
-	config        *Config
-	configPath    string
+	ctx        context.Context
+	useCase    *domain.UseCase
+	clipboard  *clipboard.Service
+	dictionary dictionary.Looker
+	anki       *anki.Client
+	config     *Config
+	configPath string
 }
 
 func NewApplication() *Application {
@@ -57,17 +54,17 @@ func (a *Application) Startup(ctx context.Context) {
 	googleTranslator := translator.New()
 
 	var repo domain.Repository
-	jsonRepo, err := history.New()
+	sqliteRepo, err := history.NewSQLite()
 	if err != nil {
-		logger.Debugf("warning: failed to init history repo: %v", err)
+		logger.Debugf("warning: failed to init sqlite history: %v", err)
 		repo = nopRepository{}
 	} else {
-		repo = jsonRepo
+		repo = sqliteRepo
 	}
 
 	a.useCase = domain.NewUseCase(googleTranslator, repo, logger.DefaultLogger{})
 	a.clipboard = clipboard.New(ctx)
-	a.dictionary = dictionary.New()
+	a.dictionary = dictionary.NewMulti(a.config.DictionaryProvider, a.config.YandexDictionaryAPIKey)
 	a.anki = anki.NewFromConfig(
 		a.config.AnkiConnectURL,
 		a.config.AnkiDeckWords,
@@ -75,17 +72,26 @@ func (a *Application) Startup(ctx context.Context) {
 		a.config.AnkiNoteTypeWords,
 		a.config.AnkiNoteTypePhrases,
 	)
-	if a.config.ObsidianVaultPath != "" {
-		if vault, err := obsidian.NewVault(a.config.ObsidianVaultPath); err != nil {
-			logger.Debugf("warning: obsidian vault: %v", err)
-		} else {
-			a.obsidianVault = vault
-		}
-	}
-
 	hotkeyService := hotkey.New(ctx, func(text string) {
 		runtime.EventsEmit(ctx, "hotkey:paste", text)
 	}, a.config.Hotkey)
+
+	if a.config.HotkeyAddToAnki != "" {
+		hotkeyService.Register(a.config.HotkeyAddToAnki, func(clipText string) {
+			resp, _ := a.TranslateAndSaveToAnki()
+			if resp != nil {
+				evt := map[string]interface{}{
+					"noteId": resp.NoteID,
+					"word":   strings.TrimSpace(clipText),
+				}
+				if resp.Error != "" {
+					evt["error"] = resp.Error
+				}
+				runtime.EventsEmit(ctx, "anki:added", evt)
+			}
+		})
+	}
+
 	go hotkeyService.Start()
 
 	logger.Debug("app: started successfully")
@@ -141,7 +147,7 @@ func (a *Application) ToggleAlwaysOnTop(enabled bool) {
 	runtime.WindowSetAlwaysOnTop(a.ctx, enabled)
 }
 
-// LookupDictionary fetches transcription and examples for a word (e.g. for Anki/Obsidian). Returns nil if not found.
+// LookupDictionary fetches transcription and examples for a word (e.g. for Anki). Returns nil if not found.
 func (a *Application) LookupDictionary(word string, lang string) (*interfaces.DictionaryEntryDTO, error) {
 	entry, err := a.dictionary.Lookup(word, lang)
 	if err != nil || entry == nil {
@@ -198,21 +204,31 @@ func (a *Application) SaveToAnki(req interfaces.SaveToAnkiRequestDTO) (*interfac
 
 	ankiTags, displayTags := buildAnkiTags(req.IsPhrase, partOfSpeech, req.FromLang, req.ToLang, req.Tags)
 
+	var noteID int64
 	if req.IsPhrase {
-		noteID, err := a.anki.AddPhraseNote(source, result, exampleEN, exampleRU, req.Context, displayTags, ankiTags)
+		id, err := a.anki.AddPhraseNote(source, result, exampleEN, exampleRU, req.Context, displayTags, ankiTags)
 		if err != nil {
 			logger.Debugf("app: SaveToAnki phrase error: %v", err)
 			return &interfaces.SaveToAnkiResponseDTO{Error: err.Error()}, nil
 		}
+		noteID = id
 		logger.Debugf("app: SaveToAnki phrase noteId=%d tags=%v", noteID, ankiTags)
-		return &interfaces.SaveToAnkiResponseDTO{NoteID: noteID}, nil
+	} else {
+		id, err := a.anki.AddWordNote(source, result, transcription, partOfSpeech, definition, exampleEN, exampleRU, req.Context, displayTags, "translator", ankiTags)
+		if err != nil {
+			logger.Debugf("app: SaveToAnki word error: %v", err)
+			return &interfaces.SaveToAnkiResponseDTO{Error: err.Error()}, nil
+		}
+		noteID = id
+		logger.Debugf("app: SaveToAnki word noteId=%d tags=%v", noteID, ankiTags)
 	}
-	noteID, err := a.anki.AddWordNote(source, result, transcription, partOfSpeech, definition, exampleEN, exampleRU, req.Context, displayTags, "translator", ankiTags)
-	if err != nil {
-		logger.Debugf("app: SaveToAnki word error: %v", err)
-		return &interfaces.SaveToAnkiResponseDTO{Error: err.Error()}, nil
+
+	if a.config.AnkiAutoSync {
+		if err := a.anki.Sync(); err != nil {
+			logger.Debugf("app: anki sync error: %v", err)
+		}
 	}
-	logger.Debugf("app: SaveToAnki word noteId=%d tags=%v", noteID, ankiTags)
+
 	return &interfaces.SaveToAnkiResponseDTO{NoteID: noteID}, nil
 }
 
@@ -263,67 +279,36 @@ func normalizeLangTag(lang string) string {
 	return lang
 }
 
-// SaveToObsidian writes a note to the Obsidian vault (Vocabulary/Words or Phrases) and updates _index.md.
-func (a *Application) SaveToObsidian(req interfaces.SaveToObsidianRequestDTO) (*interfaces.SaveToObsidianResponseDTO, error) {
-	logger.Debugf("app: SaveToObsidian source=%q isPhrase=%v", req.Source, req.IsPhrase)
-	if a.obsidianVault == nil {
-		return &interfaces.SaveToObsidianResponseDTO{Error: "Obsidian не настроен: укажите путь к vault в настройках"}, nil
+// TranslateAndSaveToAnki reads clipboard, translates and saves to Anki in one step.
+// Used by compact mode and the "Add to Anki" hotkey.
+func (a *Application) TranslateAndSaveToAnki() (*interfaces.SaveToAnkiResponseDTO, error) {
+	text, err := runtime.ClipboardGetText(a.ctx)
+	if err != nil || strings.TrimSpace(text) == "" {
+		return &interfaces.SaveToAnkiResponseDTO{Error: "буфер обмена пуст"}, nil
 	}
-	source := strings.TrimSpace(req.Source)
-	result := strings.TrimSpace(req.Result)
-	if source == "" || result == "" {
-		return &interfaces.SaveToObsidianResponseDTO{Error: "пустой текст или перевод"}, nil
+	text = strings.TrimSpace(text)
+
+	fromLang := "auto"
+	toLang := "ru"
+	langs := a.useCase.SupportedLanguages()
+	cmd := domain.TranslateCommand{
+		Text:     text,
+		FromLang: interfaces.ResolveLanguage(fromLang, langs),
+		ToLang:   interfaces.ResolveLanguage(toLang, langs),
 	}
-	added := time.Now().Format("2006-01-02")
-	tags := req.Tags
-	if tags == "" {
-		tags = "vocabulary"
-	}
-	if req.IsPhrase {
-		path, err := a.obsidianVault.WritePhraseNote(obsidian.PhraseNoteParams{
-			Phrase:      source,
-			Translation: result,
-			Examples:    []string{req.ExampleEN},
-			ExamplesRU:  []string{req.ExampleRU},
-			Context:     req.Context,
-			Tags:        tags,
-			Added:       added,
-		})
-		if err != nil {
-			return &interfaces.SaveToObsidianResponseDTO{Error: err.Error()}, nil
-		}
-		if err := a.obsidianVault.AppendToIndex(source, result, "phrase", tags, added); err != nil {
-			logger.Debugf("app: SaveToObsidian index error: %v", err)
-		}
-		return &interfaces.SaveToObsidianResponseDTO{Path: path}, nil
-	}
-	defs := []string{result}
-	if req.PartOfSpeech != "" {
-		defs = []string{result + " (" + req.PartOfSpeech + ")"}
-	}
-	path, err := a.obsidianVault.WriteWordNote(obsidian.WordNoteParams{
-		Word:          source,
-		Translation:   result,
-		Transcription: req.Transcription,
-		PartOfSpeech:  req.PartOfSpeech,
-		Definitions:   defs,
-		Examples:      []string{req.ExampleEN},
-		ExamplesRU:    []string{req.ExampleRU},
-		Context:       req.Context,
-		Tags:          tags,
-		Added:         added,
-	})
+	result, err := a.useCase.Translate(cmd)
 	if err != nil {
-		return &interfaces.SaveToObsidianResponseDTO{Error: err.Error()}, nil
+		return &interfaces.SaveToAnkiResponseDTO{Error: err.Error()}, nil
 	}
-	partOfSpeech := req.PartOfSpeech
-	if partOfSpeech == "" {
-		partOfSpeech = "-"
+
+	req := interfaces.SaveToAnkiRequestDTO{
+		Source:   result.Source,
+		Result:   result.Result,
+		FromLang: result.FromLang.Code,
+		ToLang:   result.ToLang.Code,
+		IsPhrase: strings.Contains(strings.TrimSpace(result.Source), " "),
 	}
-	if err := a.obsidianVault.AppendToIndex(source, result, partOfSpeech, tags, added); err != nil {
-		logger.Debugf("app: SaveToObsidian index error: %v", err)
-	}
-	return &interfaces.SaveToObsidianResponseDTO{Path: path}, nil
+	return a.SaveToAnki(req)
 }
 
 // GetConfig returns the current app configuration for the settings UI.
@@ -339,12 +324,17 @@ func (a *Application) GetConfig() (*interfaces.ConfigDTO, error) {
 		AnkiDeckPhrases:     a.config.AnkiDeckPhrases,
 		AnkiNoteTypeWords:   a.config.AnkiNoteTypeWords,
 		AnkiNoteTypePhrases: a.config.AnkiNoteTypePhrases,
-		ObsidianVaultPath:   a.config.ObsidianVaultPath,
-		Hotkey:              a.config.Hotkey,
+		AutoAddToAnki:       a.config.AutoAddToAnki,
+		AnkiAutoSync:        a.config.AnkiAutoSync,
+		CompactMode:            a.config.CompactMode,
+		DictionaryProvider:     a.config.DictionaryProvider,
+		YandexDictionaryAPIKey: a.config.YandexDictionaryAPIKey,
+		Hotkey:                 a.config.Hotkey,
+		HotkeyAddToAnki:        a.config.HotkeyAddToAnki,
 	}, nil
 }
 
-// SaveConfig persists configuration and updates Anki/Obsidian and logger.
+// SaveConfig persists configuration and updates Anki client and logger.
 func (a *Application) SaveConfig(c interfaces.ConfigDTO) error {
 	a.config = &Config{
 		TranslatorDebug:     c.TranslatorDebug,
@@ -354,8 +344,13 @@ func (a *Application) SaveConfig(c interfaces.ConfigDTO) error {
 		AnkiDeckPhrases:     c.AnkiDeckPhrases,
 		AnkiNoteTypeWords:   c.AnkiNoteTypeWords,
 		AnkiNoteTypePhrases: c.AnkiNoteTypePhrases,
-		ObsidianVaultPath:   c.ObsidianVaultPath,
-		Hotkey:              c.Hotkey,
+		AutoAddToAnki:       c.AutoAddToAnki,
+		AnkiAutoSync:        c.AnkiAutoSync,
+		CompactMode:            c.CompactMode,
+		DictionaryProvider:     c.DictionaryProvider,
+		YandexDictionaryAPIKey: c.YandexDictionaryAPIKey,
+		Hotkey:                 c.Hotkey,
+		HotkeyAddToAnki:        c.HotkeyAddToAnki,
 	}
 	logger.Enabled = a.config.TranslatorDebug
 	if a.configPath != "" {
@@ -370,14 +365,7 @@ func (a *Application) SaveConfig(c interfaces.ConfigDTO) error {
 		a.config.AnkiNoteTypeWords,
 		a.config.AnkiNoteTypePhrases,
 	)
-	a.obsidianVault = nil
-	if a.config.ObsidianVaultPath != "" {
-		if vault, err := obsidian.NewVault(a.config.ObsidianVaultPath); err != nil {
-			logger.Debugf("obsidian vault after config save: %v", err)
-		} else {
-			a.obsidianVault = vault
-		}
-	}
+	a.dictionary = dictionary.NewMulti(a.config.DictionaryProvider, a.config.YandexDictionaryAPIKey)
 	return nil
 }
 

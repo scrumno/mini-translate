@@ -23,6 +23,11 @@
   color: var(--color-danger);
 }
 
+.saveHint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 .resultBase {
   padding: 14px 16px;
   border-radius: var(--radius-md);
@@ -52,12 +57,23 @@
   background: var(--color-bg-secondary);
 }
 
+.resultHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
 .resultLabel {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.speakRow {
+  display: flex;
+  gap: 2px;
 }
 
 .resultText {

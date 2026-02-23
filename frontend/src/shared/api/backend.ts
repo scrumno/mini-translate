@@ -8,8 +8,6 @@ import type {
   DictionaryEntryDTO,
   SaveToAnkiRequestDTO,
   SaveToAnkiResponseDTO,
-  SaveToObsidianRequestDTO,
-  SaveToObsidianResponseDTO,
   ConfigDTO,
 } from '@/shared/types'
 import { log } from '@/shared/lib/logger'
@@ -29,7 +27,7 @@ declare global {
           ToggleAlwaysOnTop(enabled: boolean): Promise<void>
           LookupDictionary(word: string, lang: string): Promise<DictionaryEntryDTO | null>
           SaveToAnki(req: SaveToAnkiRequestDTO): Promise<SaveToAnkiResponseDTO>
-          SaveToObsidian(req: SaveToObsidianRequestDTO): Promise<SaveToObsidianResponseDTO>
+          TranslateAndSaveToAnki(): Promise<SaveToAnkiResponseDTO>
           GetConfig(): Promise<ConfigDTO>
           SaveConfig(c: ConfigDTO): Promise<void>
         }
@@ -40,6 +38,7 @@ declare global {
       EventsOff(event: string): void
       WindowHide(): void
       WindowShow(): void
+      WindowSetSize?(width: number, height: number): void
     }
   }
 }
@@ -94,9 +93,9 @@ export const backendApi = {
     return api.SaveToAnki(req)
   },
 
-  saveToObsidian: async (req: SaveToObsidianRequestDTO): Promise<SaveToObsidianResponseDTO> => {
-    log('[backend] saveToObsidian', req)
-    return api.SaveToObsidian(req)
+  translateAndSaveToAnki: async (): Promise<SaveToAnkiResponseDTO> => {
+    log('[backend] translateAndSaveToAnki')
+    return api.TranslateAndSaveToAnki()
   },
 
   getConfig: async (): Promise<ConfigDTO> => {

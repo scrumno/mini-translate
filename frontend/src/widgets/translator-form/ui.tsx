@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import type { KeyboardEvent } from 'react'
+import type { ConfigDTO } from '@/shared/types'
 import {
   Select,
   Textarea,
@@ -19,7 +21,13 @@ export function TranslatorForm() {
   const langOptions = languages.map(l => ({ value: l.code, label: l.name }))
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savingAnki, setSavingAnki] = useState(false)
-  const [savingObsidian, setSavingObsidian] = useState(false)
+  const [autoAnkiMsg, setAutoAnkiMsg] = useState<string | null>(null)
+  const [config, setConfig] = useState<ConfigDTO | null>(null)
+  const lastAutoSavedId = useRef<string | null>(null)
+
+  useEffect(() => {
+    backendApi.getConfig().then(setConfig).catch(() => {})
+  }, [])
 
   const onTranslateRef = useRef(onTranslate)
   onTranslateRef.current = onTranslate
@@ -27,7 +35,24 @@ export function TranslatorForm() {
 
   useEffect(() => {
     setSaveError(null)
+    setAutoAnkiMsg(null)
   }, [inputText])
+
+  useEffect(() => {
+    if (
+      translationState.status !== 'success' ||
+      !config?.autoAddToAnki ||
+      lastAutoSavedId.current === translationState.data.id
+    ) return
+    lastAutoSavedId.current = translationState.data.id
+    const { source, result } = translationState.data
+    backendApi
+      .saveToAnki({ source, result, fromLang, toLang, isPhrase: source.trim().includes(' ') })
+      .then(res => {
+        setAutoAnkiMsg(res.error ? res.error : 'Добавлено в Anki')
+      })
+      .catch(() => setAutoAnkiMsg('Ошибка автодобавления'))
+  }, [translationState, config, fromLang, toLang])
 
   useEffect(() => {
     return () => {
@@ -76,21 +101,6 @@ export function TranslatorForm() {
     }
   }
 
-  const handleSaveToObsidian = async () => {
-    const payload = getSavePayload()
-    if (!payload) return
-    setSaveError(null)
-    setSavingObsidian(true)
-    try {
-      const res = await backendApi.saveToObsidian(payload)
-      if (res.error) setSaveError(res.error)
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Ошибка')
-    } finally {
-      setSavingObsidian(false)
-    }
-  }
-
   const showSaveRow = translationState.status === 'success'
 
   return (
@@ -123,12 +133,12 @@ export function TranslatorForm() {
       <ResultBox state={translationState} />
       {showSaveRow && (
         <div className={styles.saveRow}>
-          <Button onClick={handleSaveToAnki} disabled={savingAnki} loading={savingAnki} size="sm" variant="ghost">
-            В Anki
-          </Button>
-          <Button onClick={handleSaveToObsidian} disabled={savingObsidian} loading={savingObsidian} size="sm" variant="ghost">
-            В Obsidian
-          </Button>
+          {!config?.autoAddToAnki && (
+            <Button onClick={handleSaveToAnki} disabled={savingAnki} loading={savingAnki} size="sm" variant="ghost">
+              В Anki
+            </Button>
+          )}
+          {autoAnkiMsg && <span className={styles.saveHint}>{autoAnkiMsg}</span>}
           {saveError && <span className={styles.saveError}>{saveError}</span>}
         </div>
       )}

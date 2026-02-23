@@ -37,6 +37,14 @@
   overflow: auto;
 }
 
+.toast {
+  padding: 4px 12px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  background: var(--color-bg-secondary);
+}
+
 .resizeZone {
   position: absolute;
   z-index: 10;

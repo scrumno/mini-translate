@@ -8,8 +8,13 @@ export namespace interfaces {
 	    ankiDeckPhrases: string;
 	    ankiNoteTypeWords: string;
 	    ankiNoteTypePhrases: string;
-	    obsidianVaultPath: string;
+	    autoAddToAnki: boolean;
+	    ankiAutoSync: boolean;
+	    compactMode: boolean;
+	    dictionaryProvider: string;
+	    yandexDictionaryApiKey: string;
 	    hotkey: string;
+	    hotkeyAddToAnki: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConfigDTO(source);
@@ -24,8 +29,13 @@ export namespace interfaces {
 	        this.ankiDeckPhrases = source["ankiDeckPhrases"];
 	        this.ankiNoteTypeWords = source["ankiNoteTypeWords"];
 	        this.ankiNoteTypePhrases = source["ankiNoteTypePhrases"];
-	        this.obsidianVaultPath = source["obsidianVaultPath"];
+	        this.autoAddToAnki = source["autoAddToAnki"];
+	        this.ankiAutoSync = source["ankiAutoSync"];
+	        this.compactMode = source["compactMode"];
+	        this.dictionaryProvider = source["dictionaryProvider"];
+	        this.yandexDictionaryApiKey = source["yandexDictionaryApiKey"];
 	        this.hotkey = source["hotkey"];
+	        this.hotkeyAddToAnki = source["hotkeyAddToAnki"];
 	    }
 	}
 	export class DictionaryEntryDTO {
@@ -105,52 +115,6 @@ export namespace interfaces {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.noteId = source["noteId"];
-	        this.error = source["error"];
-	    }
-	}
-	export class SaveToObsidianRequestDTO {
-	    source: string;
-	    result: string;
-	    fromLang: string;
-	    toLang: string;
-	    isPhrase: boolean;
-	    transcription?: string;
-	    partOfSpeech?: string;
-	    exampleEN?: string;
-	    exampleRU?: string;
-	    context?: string;
-	    tags?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new SaveToObsidianRequestDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.source = source["source"];
-	        this.result = source["result"];
-	        this.fromLang = source["fromLang"];
-	        this.toLang = source["toLang"];
-	        this.isPhrase = source["isPhrase"];
-	        this.transcription = source["transcription"];
-	        this.partOfSpeech = source["partOfSpeech"];
-	        this.exampleEN = source["exampleEN"];
-	        this.exampleRU = source["exampleRU"];
-	        this.context = source["context"];
-	        this.tags = source["tags"];
-	    }
-	}
-	export class SaveToObsidianResponseDTO {
-	    path?: string;
-	    error?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new SaveToObsidianResponseDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.path = source["path"];
 	        this.error = source["error"];
 	    }
 	}
