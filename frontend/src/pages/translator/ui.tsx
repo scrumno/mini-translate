@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslationEntity } from '@/entities/translation/model'
 import type { TranslationDTO } from '@/shared/types'
 import { useTranslate } from '@/features/translate/model'
@@ -7,142 +7,101 @@ import { usePinWindow } from '@/features/pin-window/model'
 import { useHotkeyPaste } from '@/features/hotkey/model'
 import { TranslatorForm } from '@/widgets/translator-form/ui'
 import { HistoryPanel } from '@/widgets/history-panel/ui'
+import { SettingsModal } from '@/widgets/settings/ui'
 import { Divider } from '@/shared/ui'
+import { TranslatorProvider } from './context'
+import { Titlebar } from './Titlebar'
+import styles from './translator-page.module.css'
 
-function PinIcon({ active }: { active: boolean }) {
-    return (
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path
-                d="M7.5 1.5L11.5 5.5L8.5 8.5V11.5L4.5 7.5H1.5L4.5 4.5L7.5 1.5Z"
-                stroke="currentColor"
-                strokeWidth="1.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill={active ? 'rgba(255,255,255,0.15)' : 'none'}
-            />
-        </svg>
-    )
-}
+function TranslatorPageContent() {
+  const { pinned, toggle: togglePin } = usePinWindow(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
-function Titlebar({ pinned, onTogglePin }: { pinned: boolean; onTogglePin: () => void }) {
-    return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px 10px',
-            // @ts-expect-error wails
-            '--wails-draggable': 'drag',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-        }}>
-      <span style={{
-          fontSize: '11px',
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.25)',
-      }}>
-        Translate
-      </span>
-
-            <button
-                onClick={onTogglePin}
-                title={pinned ? 'Unpin' : 'Pin on top'}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '26px',
-                    height: '26px',
-                    background: pinned ? 'rgba(255,255,255,0.08)' : 'transparent',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '7px',
-                    cursor: 'pointer',
-                    color: pinned ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)',
-                    transition: 'all 0.15s ease',
-                    // @ts-expect-error wails
-                    '--wails-draggable': 'no-drag',
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.background = pinned ? 'rgba(255,255,255,0.08)' : 'transparent'
-                    e.currentTarget.style.color = pinned ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)'
-                }}
-            >
-                <PinIcon active={pinned} />
-            </button>
-        </div>
-    )
+  return (
+    <div className={styles.root}>
+      <div className={`${styles.resizeZone} ${styles.resizeTop}`} />
+      <div className={`${styles.resizeZone} ${styles.resizeRight}`} />
+      <div className={`${styles.resizeZone} ${styles.resizeBottom}`} />
+      <div className={`${styles.resizeZone} ${styles.resizeLeft}`} />
+      <div className={`${styles.resizeCorner} ${styles.resizeTopLeft}`} />
+      <div className={`${styles.resizeCorner} ${styles.resizeTopRight}`} />
+      <div className={`${styles.resizeCorner} ${styles.resizeBottomRight}`} />
+      <div className={`${styles.resizeCorner} ${styles.resizeBottomLeft}`} />
+      <Titlebar pinned={pinned} onTogglePin={togglePin} onOpenSettings={() => setSettingsOpen(true)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <Divider />
+      <div className={styles.content}>
+        <TranslatorForm />
+      </div>
+      <HistoryPanel />
+    </div>
+  )
 }
 
 export function TranslatorPage() {
-    const [inputText, setInputText] = useState('')
-    const [fromLang, setFromLang] = useState('auto')
-    const [toLang, setToLang] = useState('ru')
+  const [inputText, setInputText] = useState('')
+  const [fromLang, setFromLang] = useState('ru')
+  const [toLang, setToLang] = useState('en')
 
-    const entity = useTranslationEntity()
-    const translate = useTranslate(entity)
-    const { pinned, toggle: togglePin } = usePinWindow(true)
+  const entity = useTranslationEntity()
+  const translate = useTranslate(entity)
 
-    const handleTranslate = useCallback(() => {
-        translate(inputText, fromLang, toLang)
-    }, [translate, inputText, fromLang, toLang])
+  useEffect(() => {
+    entity.clearError()
+  }, [inputText])
 
-    const handlePaste = useCallback((text: string) => {
-        setInputText(text)
-        translate(text, fromLang, toLang)
-    }, [translate, fromLang, toLang])
+  const handleTranslate = useCallback(() => {
+    translate(inputText, fromLang, toLang)
+  }, [translate, inputText, fromLang, toLang])
 
-    const pasteFromClipboard = useClipboardPaste(handlePaste)
-    useHotkeyPaste(handlePaste)
+  const handlePaste = useCallback(
+    (text: string) => {
+      setInputText(text)
+      translate(text, fromLang, toLang)
+    },
+    [translate, fromLang, toLang]
+  )
 
-    const handleHistorySelect = useCallback((item: TranslationDTO) => {
-        setInputText(item.source)
-        setFromLang(item.fromLang)
-        setToLang(item.toLang)
-        entity.setSuccess(item, false) // false = don't add to history again
-    }, [entity])
+  const pasteFromClipboard = useClipboardPaste(handlePaste)
+  useHotkeyPaste(handlePaste)
 
-    return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100vh',
-            background: '#111113',
-            color: '#f5f5f5',
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif",
-            overflow: 'hidden',
-        }}>
-            <Titlebar pinned={pinned} onTogglePin={togglePin} />
+  const handleHistorySelect = useCallback(
+    (item: TranslationDTO) => {
+      setInputText(item.source)
+      setFromLang(item.fromLang)
+      setToLang(item.toLang)
+      entity.setSuccess(item, false)
+    },
+    [entity]
+  )
 
-            <Divider />
+  const handleSwapLanguages = useCallback(() => {
+    const newFrom = toLang
+    const newTo = fromLang === 'auto' ? toLang : fromLang
+    setFromLang(newFrom)
+    setToLang(newTo)
+  }, [fromLang, toLang])
 
-            {/* Main content */}
-            <div style={{ padding: '16px 20px', flex: 1, overflow: 'hidden' }}>
-                <TranslatorForm
-                    inputText={inputText}
-                    fromLang={fromLang}
-                    toLang={toLang}
-                    languages={entity.languages}
-                    translationState={entity.current}
-                    onInputChange={setInputText}
-                    onFromLangChange={setFromLang}
-                    onToLangChange={setToLang}
-                    onTranslate={handleTranslate}
-                    onPasteClipboard={pasteFromClipboard}
-                />
-            </div>
+  const contextValue = {
+    inputText,
+    setInputText,
+    fromLang,
+    setFromLang,
+    toLang,
+    setToLang,
+    languages: entity.languages,
+    translationState: entity.current,
+    onTranslate: handleTranslate,
+    onPasteClipboard: pasteFromClipboard,
+    onSwapLanguages: handleSwapLanguages,
+    history: entity.history,
+    onHistorySelect: handleHistorySelect,
+    onClearHistory: entity.clearHistory,
+  }
 
-            {/* Collapsible history at bottom */}
-            <HistoryPanel
-                items={entity.history}
-                onSelect={handleHistorySelect}
-                onClear={entity.clearHistory}
-            />
-        </div>
-    )
+  return (
+    <TranslatorProvider value={contextValue}>
+      <TranslatorPageContent />
+    </TranslatorProvider>
+  )
 }

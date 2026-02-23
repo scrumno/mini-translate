@@ -34,5 +34,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: translator-windows
+          name: mini-translate
           path: build/bin/translator.exe

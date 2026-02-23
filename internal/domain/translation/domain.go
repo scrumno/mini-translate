@@ -24,12 +24,15 @@ type Language struct {
 
 // ─── Value Objects ────────────────────────────────────────────────────────────
 
-// TranslateRequest is an immutable value object describing a translation request.
-type TranslateRequest struct {
+// TranslateCommand is the command DTO for the Translate use case.
+type TranslateCommand struct {
 	Text     string
 	FromLang Language
 	ToLang   Language
 }
+
+// GetHistoryQuery is the query for fetching translation history (empty for symmetry).
+type GetHistoryQuery struct{}
 
 // ─── Repository Interface (DIP) ───────────────────────────────────────────────
 
@@ -46,7 +49,13 @@ type Repository interface {
 // Translator defines the translation capability.
 // Implemented in infrastructure layer.
 type Translator interface {
-	Translate(req TranslateRequest) (string, error)
+	Translate(cmd TranslateCommand) (string, error)
+}
+
+// DebugLogger is an optional logger for non-fatal events (e.g. save failure).
+// Implemented by internal/pkg/logger. Pass nil to disable.
+type DebugLogger interface {
+	Debugf(format string, args ...interface{})
 }
 
 // ─── Supported Languages ──────────────────────────────────────────────────────

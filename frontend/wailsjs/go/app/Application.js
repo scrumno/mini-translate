@@ -10,12 +10,32 @@ export function GetClipboard() {
   return window['go']['app']['Application']['GetClipboard']();
 }
 
+export function GetConfig() {
+  return window['go']['app']['Application']['GetConfig']();
+}
+
 export function GetHistory() {
   return window['go']['app']['Application']['GetHistory']();
 }
 
 export function GetLanguages() {
   return window['go']['app']['Application']['GetLanguages']();
+}
+
+export function LookupDictionary(arg1, arg2) {
+  return window['go']['app']['Application']['LookupDictionary'](arg1, arg2);
+}
+
+export function SaveConfig(arg1) {
+  return window['go']['app']['Application']['SaveConfig'](arg1);
+}
+
+export function SaveToAnki(arg1) {
+  return window['go']['app']['Application']['SaveToAnki'](arg1);
+}
+
+export function SaveToObsidian(arg1) {
+  return window['go']['app']['Application']['SaveToObsidian'](arg1);
 }
 
 export function ToggleAlwaysOnTop(arg1) {

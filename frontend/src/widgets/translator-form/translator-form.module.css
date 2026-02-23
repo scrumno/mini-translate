@@ -1,0 +1,70 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.langRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.saveRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.saveError {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+}
+
+.resultBase {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--font-size-md);
+  text-align: center;
+  animation: fadeUp 0.15s ease-out;
+}
+
+.resultLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.resultError {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: rgba(229, 83, 75, 0.15);
+}
+
+.resultAnimated {
+  background: var(--color-bg-secondary);
+}
+
+.resultLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resultText {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+}
+
+.resultLine {
+  margin: 2px 0;
+}

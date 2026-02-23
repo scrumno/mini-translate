@@ -4,6 +4,7 @@ go 1.25.7
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/robotn/gohook v0.42.3
 	github.com/wailsapp/wails/v2 v2.11.0
 )

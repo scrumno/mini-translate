@@ -3,30 +3,36 @@ package main
 import (
 	"embed"
 
+	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
 	"translator/internal/app"
+	"translator/internal/pkg/logger"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
+	_ = godotenv.Load()
+	logger.InitFromEnv()
+
 	application := app.NewApplication()
 
 	err := wails.Run(&options.App{
-		Title:            "Translator",
-		Width:            400,
-		Height:           600,
-		MinWidth:         360,
-		MinHeight:        480,
+		Title:            "Переводчик by scrumno",
+		Width:            380,
+		Height:           520,
+		MinWidth:         320,
+		MinHeight:        400,
 		AlwaysOnTop:      true,
 		Frameless:        true,
-		BackgroundColour: &options.RGBA{R: 9, G: 9, B: 11, A: 255},
+		BackgroundColour: &options.RGBA{R: 28, G: 28, B: 28, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -42,6 +48,9 @@ func main() {
 			TitleBar:             mac.TitleBarHiddenInset(),
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
+		},
+		Linux: &linux.Options{
+			WindowIsTranslucent: false,
 		},
 	})
 

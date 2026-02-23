@@ -6,9 +6,19 @@ export function ClearHistory():Promise<void>;
 
 export function GetClipboard():Promise<string>;
 
+export function GetConfig():Promise<interfaces.ConfigDTO>;
+
 export function GetHistory():Promise<Array<interfaces.TranslationDTO>>;
 
 export function GetLanguages():Promise<Array<interfaces.LanguageDTO>>;
+
+export function LookupDictionary(arg1:string,arg2:string):Promise<interfaces.DictionaryEntryDTO>;
+
+export function SaveConfig(arg1:interfaces.ConfigDTO):Promise<void>;
+
+export function SaveToAnki(arg1:interfaces.SaveToAnkiRequestDTO):Promise<interfaces.SaveToAnkiResponseDTO>;
+
+export function SaveToObsidian(arg1:interfaces.SaveToObsidianRequestDTO):Promise<interfaces.SaveToObsidianResponseDTO>;
 
 export function ToggleAlwaysOnTop(arg1:boolean):Promise<void>;
 

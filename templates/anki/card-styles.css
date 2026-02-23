@@ -1,0 +1,188 @@
+/* Anki card styles — Translator app (dark theme).
+   Paste into: Tools → Manage Note Types → [type] → Cards → Styling. */
+
+/* ── Base ── */
+.card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+  font-size: 17px;
+  background: #0d0d18;
+  color: #d8d8e8;
+  margin: 0;
+  padding: 0;
+  line-height: 1.55;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+}
+.card.nightMode {
+  background: #0d0d18;
+  color: #d8d8e8;
+}
+
+/* ── Card inner wrapper ── */
+.card-inner {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 2.2em 1.6em;
+}
+
+/* ── Word / phrase — hero element ── */
+.word {
+  font-size: 2em;
+  font-weight: 700;
+  color: #7eaaff;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.1em;
+}
+.word-sm {
+  font-size: 1.15em;
+  font-weight: 600;
+  color: #7eaaff;
+  opacity: 0.55;
+  margin-bottom: 0.05em;
+}
+
+/* ── Transcription ── */
+.tr {
+  color: #606080;
+  font-size: 0.88em;
+  font-family: "Consolas", "SF Mono", "Menlo", monospace;
+  margin-bottom: 0.35em;
+}
+
+/* ── Part-of-speech pill ── */
+.pos {
+  display: inline-block;
+  font-size: 0.72em;
+  color: #7878a0;
+  background: #191930;
+  padding: 0.15em 0.7em;
+  border-radius: 99px;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.35em;
+}
+
+/* ── Divider ── */
+.hr {
+  border: none;
+  border-top: 1px solid #1e1e38;
+  margin: 1.1em 0;
+}
+
+/* ── Translation — the answer ── */
+.tl {
+  font-size: 1.55em;
+  font-weight: 600;
+  color: #ff9872;
+  margin-bottom: 0.3em;
+}
+.tl-sm {
+  font-size: 1em;
+  font-weight: 500;
+  color: #ff9872;
+  opacity: 0.8;
+}
+
+/* ── Section label ── */
+.lbl {
+  font-size: 0.65em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #484868;
+  margin-bottom: 0.25em;
+  text-align: left;
+}
+
+/* ── Section wrapper ── */
+.sec {
+  margin-top: 0.9em;
+}
+
+/* ── Definition ── */
+.def {
+  color: #a0a0c0;
+  font-size: 0.88em;
+  text-align: left;
+  line-height: 1.55;
+}
+
+/* ── Example sentence ── */
+.ex {
+  color: #7878a0;
+  font-size: 0.88em;
+  font-style: italic;
+  text-align: left;
+  line-height: 1.5;
+}
+.ex-ru {
+  color: #606078;
+  font-size: 0.82em;
+  text-align: left;
+  margin-top: 0.15em;
+}
+
+/* ── Tags ── */
+.tags {
+  color: #3c3c58;
+  font-size: 0.7em;
+  margin-top: 1.3em;
+  letter-spacing: 0.03em;
+}
+
+/* ── Prompt text ── */
+.prompt {
+  color: #585878;
+  font-size: 0.88em;
+  margin-top: 0.9em;
+  font-style: italic;
+}
+
+/* ── Phrase hero ── */
+.phrase {
+  font-size: 1.65em;
+  font-weight: 600;
+  color: #7eaaff;
+  line-height: 1.35;
+  margin-bottom: 0.15em;
+}
+.phrase-sm {
+  font-size: 0.95em;
+  color: #585878;
+  margin-bottom: 0.15em;
+}
+
+/* ── Type badge (idiom / phrasal verb) ── */
+.badge {
+  display: inline-block;
+  font-size: 0.68em;
+  color: #7eaaff;
+  border: 1px solid #252548;
+  padding: 0.12em 0.55em;
+  border-radius: 99px;
+  margin-top: 0.6em;
+  letter-spacing: 0.03em;
+}
+
+/* ── Context sentence (fill-the-blank card) ── */
+.ctx {
+  font-size: 1.1em;
+  color: #b8b8d0;
+  line-height: 1.5;
+  margin: 0.5em 0;
+  text-align: left;
+}
+
+/* ── Cloze blank ── */
+.blank {
+  display: inline;
+  border-bottom: 2px solid #7eaaff;
+  padding: 0 0.5em;
+  min-width: 3em;
+  color: transparent;
+}
+
+/* ── Reveal highlight ── */
+.reveal {
+  color: #7eaaff;
+  font-weight: 600;
+}

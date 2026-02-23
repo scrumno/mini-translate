@@ -14,46 +14,51 @@ import (
 type UseCase struct {
 	translator Translator
 	repo       Repository
+	log        DebugLogger
 }
 
 // NewUseCase constructs a UseCase with injected dependencies.
-func NewUseCase(translator Translator, repo Repository) *UseCase {
+// log may be nil to disable debug logging.
+func NewUseCase(translator Translator, repo Repository, log DebugLogger) *UseCase {
 	return &UseCase{
 		translator: translator,
 		repo:       repo,
+		log:        log,
 	}
 }
 
 // Translate performs translation and persists the result.
-func (uc *UseCase) Translate(req TranslateRequest) (Translation, error) {
-	if req.Text == "" {
+func (uc *UseCase) Translate(cmd TranslateCommand) (Translation, error) {
+	if cmd.Text == "" {
 		return Translation{}, fmt.Errorf("text cannot be empty")
 	}
 
-	result, err := uc.translator.Translate(req)
+	result, err := uc.translator.Translate(cmd)
 	if err != nil {
 		return Translation{}, fmt.Errorf("translation failed: %w", err)
 	}
 
 	t := Translation{
 		ID:        uuid.New().String(),
-		Source:    req.Text,
+		Source:    cmd.Text,
 		Result:    result,
-		FromLang:  req.FromLang,
-		ToLang:    req.ToLang,
+		FromLang:  cmd.FromLang,
+		ToLang:    cmd.ToLang,
 		CreatedAt: time.Now(),
 	}
 
 	if err := uc.repo.Save(t); err != nil {
 		// Non-fatal: translation succeeded, only persistence failed.
-		fmt.Printf("warning: failed to save translation: %v\n", err)
+		if uc.log != nil {
+			uc.log.Debugf("warning: failed to save translation: %v", err)
+		}
 	}
 
 	return t, nil
 }
 
 // GetHistory returns all past translations ordered by recency.
-func (uc *UseCase) GetHistory() ([]Translation, error) {
+func (uc *UseCase) GetHistory(_ GetHistoryQuery) ([]Translation, error) {
 	return uc.repo.FindAll()
 }
 

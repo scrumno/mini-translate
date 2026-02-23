@@ -8,6 +8,17 @@
 - История 100 последних переводов
 - Pin/Unpin окна одной кнопкой
 - Enter — переводит, Shift+Enter — перенос строки
+- **Сохранение в Anki** (кнопка «В Anki») и **в Obsidian** (кнопка «В Obsidian») после перевода
+
+---
+
+## Быстрый старт
+
+1. Установи зависимости (см. ниже).
+2. **Скопируй .env** (опционально): в папке `desktop/` выполни `cp .env.example .env` (на Windows: скопируй файл и переименуй в `.env`); в `desktop/frontend/` — то же. Все эти настройки можно задать **в интерфейсе** (кнопка «Настройки» в заголовке окна); конфиг сохраняется в файл.
+3. Сборка: `cd frontend && npm install && npm run build && cd ..`. Запуск: `wails dev` или `wails build`.
+
+Подробная настройка **Anki** и **Obsidian**: см. **[docs/ANKI-OBSIDIAN-SETUP.md](../docs/ANKI-OBSIDIAN-SETUP.md)**. Параметры можно менять в приложении через **Настройки** в заголовке окна.
 
 ---
 
@@ -54,19 +65,25 @@ wails doctor
 
 ---
 
-## Шаг 2 — Установи зависимости проекта
+## Шаг 2 — Установи зависимости проекта и .env
 
 ```cmd
-cd translator-app
+cd desktop
 
 # Go зависимости
 go mod tidy
 
-# Frontend зависимости
+# .env для бэкенда (логи, Anki, Obsidian)
+copy .env.example .env
+
+# Frontend зависимости и .env
 cd frontend
 npm install
+copy .env.example .env
 cd ..
 ```
+
+Настройки Anki и Obsidian можно задать в `.env` или в интерфейсе приложения (кнопка «Настройки» в заголовке). Подробнее: docs/ANKI-OBSIDIAN-SETUP.md.
 
 ---
 

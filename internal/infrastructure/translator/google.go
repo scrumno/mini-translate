@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	domain "translator/internal/domain/translation"
+	"translator/internal/pkg/logger"
 )
 
 type GoogleTranslator struct {
@@ -25,7 +25,7 @@ func New() *GoogleTranslator {
 
 // Translate splits text by newlines, translates each non-empty line,
 // and reassembles preserving the original structure.
-func (g *GoogleTranslator) Translate(req domain.TranslateRequest) (string, error) {
+func (g *GoogleTranslator) Translate(req domain.TranslateCommand) (string, error) {
 	lines := strings.Split(req.Text, "\n")
 	results := make([]string, len(lines))
 
@@ -52,7 +52,7 @@ func (g *GoogleTranslator) translateLine(text, from, to string) (string, error) 
 		from, to, url.QueryEscape(text),
 	)
 
-	log.Printf("translator: GET %s", endpoint)
+	logger.Debugf("translator: GET %s", endpoint)
 
 	resp, err := g.client.Get(endpoint)
 	if err != nil {
